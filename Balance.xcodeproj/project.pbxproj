@@ -6,14 +6,31 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A0F7FD712EAAC1EF002683D0 /* BalanceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0F7FD702EAAC1EF002683D0 /* BalanceApp.swift */; };
+		A0F7FD732EAAC1EF002683D0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0F7FD722EAAC1EF002683D0 /* ContentView.swift */; };
+		A0F7FD752EAAC1F0002683D0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A0F7FD742EAAC1F0002683D0 /* Assets.xcassets */; };
+		A0F7FD772EAAC1F0002683D0 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0F7FD762EAAC1F0002683D0 /* Persistence.swift */; };
+		A0F7FD7A2EAAC1F0002683D0 /* Balance.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A0F7FD782EAAC1F0002683D0 /* Balance.xcdatamodeld */; };
+		A0F7FD8D2EAAC873002683D0 /* AddMealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0F7FD8C2EAAC873002683D0 /* AddMealView.swift */; };
+		A0F7FD8F2EAAD379002683D0 /* architecture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0F7FD8E2EAAD369002683D0 /* architecture.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		A0F7FD6D2EAAC1EF002683D0 /* Balance.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Balance.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A0F7FD702EAAC1EF002683D0 /* BalanceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalanceApp.swift; sourceTree = "<group>"; };
+		A0F7FD722EAAC1EF002683D0 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A0F7FD742EAAC1F0002683D0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A0F7FD762EAAC1F0002683D0 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
+		A0F7FD792EAAC1F0002683D0 /* Balance.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Balance.xcdatamodel; sourceTree = "<group>"; };
+		A0F7FD8C2EAAC873002683D0 /* AddMealView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMealView.swift; sourceTree = "<group>"; };
+		A0F7FD8E2EAAD369002683D0 /* architecture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = architecture.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A0F7FD6F2EAAC1EF002683D0 /* Balance */ = {
+		A0F7FD8B2EAAC3E4002683D0 /* Extensions */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Balance;
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +49,12 @@
 		A0F7FD642EAAC1EF002683D0 = {
 			isa = PBXGroup;
 			children = (
-				A0F7FD6F2EAAC1EF002683D0 /* Balance */,
+				A0F7FD8E2EAAD369002683D0 /* architecture.swift */,
+				A0F7FD812EAAC2D1002683D0 /* Frontend */,
+				A0F7FD822EAAC2E9002683D0 /* Backend */,
+				A0F7FD8B2EAAC3E4002683D0 /* Extensions */,
+				A0F7FD702EAAC1EF002683D0 /* BalanceApp.swift */,
+				A0F7FD742EAAC1F0002683D0 /* Assets.xcassets */,
 				A0F7FD6E2EAAC1EF002683D0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +65,72 @@
 				A0F7FD6D2EAAC1EF002683D0 /* Balance.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A0F7FD812EAAC2D1002683D0 /* Frontend */ = {
+			isa = PBXGroup;
+			children = (
+				A0F7FD842EAAC344002683D0 /* Components */,
+				A0F7FD852EAAC353002683D0 /* Resources */,
+				A0F7FD832EAAC32D002683D0 /* Views */,
+			);
+			path = Frontend;
+			sourceTree = "<group>";
+		};
+		A0F7FD822EAAC2E9002683D0 /* Backend */ = {
+			isa = PBXGroup;
+			children = (
+				A0F7FD862EAAC365002683D0 /* Models */,
+				A0F7FD872EAAC36F002683D0 /* ViewModels */,
+				A0F7FD882EAAC381002683D0 /* Services */,
+			);
+			path = Backend;
+			sourceTree = "<group>";
+		};
+		A0F7FD832EAAC32D002683D0 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A0F7FD8C2EAAC873002683D0 /* AddMealView.swift */,
+				A0F7FD722EAAC1EF002683D0 /* ContentView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A0F7FD842EAAC344002683D0 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A0F7FD852EAAC353002683D0 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A0F7FD862EAAC365002683D0 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A0F7FD782EAAC1F0002683D0 /* Balance.xcdatamodeld */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A0F7FD872EAAC36F002683D0 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A0F7FD882EAAC381002683D0 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A0F7FD762EAAC1F0002683D0 /* Persistence.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -61,7 +149,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A0F7FD6F2EAAC1EF002683D0 /* Balance */,
+				A0F7FD8B2EAAC3E4002683D0 /* Extensions */,
 			);
 			name = Balance;
 			packageProductDependencies = (
@@ -109,6 +197,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A0F7FD752EAAC1F0002683D0 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,6 +208,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A0F7FD772EAAC1F0002683D0 /* Persistence.swift in Sources */,
+				A0F7FD732EAAC1EF002683D0 /* ContentView.swift in Sources */,
+				A0F7FD7A2EAAC1F0002683D0 /* Balance.xcdatamodeld in Sources */,
+				A0F7FD712EAAC1EF002683D0 /* BalanceApp.swift in Sources */,
+				A0F7FD8F2EAAD379002683D0 /* architecture.swift in Sources */,
+				A0F7FD8D2EAAC873002683D0 /* AddMealView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -328,6 +423,19 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		A0F7FD782EAAC1F0002683D0 /* Balance.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				A0F7FD792EAAC1F0002683D0 /* Balance.xcdatamodel */,
+			);
+			currentVersion = A0F7FD792EAAC1F0002683D0 /* Balance.xcdatamodel */;
+			path = Balance.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = A0F7FD652EAAC1EF002683D0 /* Project object */;
 }
