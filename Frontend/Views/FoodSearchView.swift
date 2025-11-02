@@ -60,10 +60,12 @@ struct FoodSearchView: View {
                     Button("Schließen") { dismiss() }
                 }
             }
-            .onChange(of: query) { newQuery in
+            // KORREKTUR für die Warnung 'onChange(of:perform:)'
+            // Verwendet die neuere Version von onChange
+            .onChange(of: query) { oldValue, newValue in
                 isLoading = true
                 debouncer.run {
-                    Task { await performSearch(query: newQuery) }
+                    Task { await performSearch(query: newValue) }
                 }
             }
         }
@@ -87,7 +89,8 @@ struct FoodSearchView: View {
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = error.localizedDescription
+                // Zeigt einen hilfreichen Fehler an, falls der v3-Schlüssel doch falsch ist
+                self.errorMessage = "Fehler: \(error.localizedDescription). Prüfen Sie den API-Schlüssel."
                 self.isLoading = false
             }
         }
@@ -111,8 +114,9 @@ final class Debouncer: ObservableObject {
 }
 
 #Preview {
+    // Dieser Schlüssel ist jetzt korrekt, da der Client auf v3 läuft
     let client = FoodRepoClient(apiKey: "3ce90a15c668deefc35392d660875a53")
-    // KORREKTUR: 'return' entfernt
+    
     FoodSearchView(client: client) { name, calories in
         print("Mahlzeit hinzugefügt: \(name), \(calories) kcal")
     }

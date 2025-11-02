@@ -61,9 +61,9 @@ private struct NutrientRow: View {
 
 // Preview
 #Preview {
-    // Dummy-Produkt für die Vorschau
+    // KORREKTUR: Die ID ist jetzt eine Zahl (Int), kein String
     let previewProduct = FoodProduct(
-        id: "1",
+        id: 1, // <--- HIER WAR DER FEHLER (war "1")
         name: "Beispiel-Mango",
         brand: "Vorschau",
         energyKcalPer100g: 67,
@@ -72,7 +72,6 @@ private struct NutrientRow: View {
         proteinPer100g: 0.5
     )
     
-    // KORREKTUR: 'return' entfernt
     NavigationView {
         FoodDetailView(product: previewProduct, onAddMeal: { name, kcal in
             print("Vorschau: \(name) mit \(kcal) kcal hinzugefügt.")
