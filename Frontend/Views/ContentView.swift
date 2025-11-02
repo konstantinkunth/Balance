@@ -4,6 +4,8 @@
 //
 //  Created by Konstantin Kunth on 23.10.25.
 //
+//  DIES IST DIE FINALE VERSION MIT DER NEUEN SUCHFUNKTION
+//
 
 import SwiftUI
 import CoreData
@@ -20,27 +22,9 @@ struct ContentView: View {
     @State private var showingActionBar = false
     @State private var showingFoodSearch = false
     @State private var showingScanner = false
-    // HINWEIS: FoodRepoClient muss in einer anderen Datei definiert sein (der Code hat ihn erwartet)
-    // private let foodRepoClient = FoodRepoClient(apiKey: "d77c76c541fcc21b4cae215349930079")
     
-    // Annahme: Wenn FoodRepoClient auch fehlt, ersetzen Sie ihn vorerst durch die neue ProductAPI
-    // ODER stellen Sie sicher, dass die FoodRepoClient-Datei auch im Projekt ist.
-    // Für den Barcode-Scanner-Teil wird es so nicht kompilieren, wenn FoodRepoClient fehlt.
-    // Ich lasse ihn vorerst drin, da der Fehler "ProductAPI" war, nicht "FoodRepoClient".
-    
-    // --- TEMPORÄRER FIX, falls FoodRepoClient fehlt ---
-    // Erstellen Sie eine Dummy-Struktur, damit der Code kompiliert,
-    // bis Sie Ihre echte FoodRepoClient-Datei wiederhergestellt haben:
-    struct FoodRepoClient {
-        var apiKey: String
-        func getProductByBarcode(ean: String) async throws -> Product {
-            // Dies ist nur ein Platzhalter
-            fatalError("Echten FoodRepoClient wiederherstellen")
-        }
-    }
-    private let foodRepoClient = FoodRepoClient(apiKey: "d77c76c541fcc21b4cae215349930079")
-    // --- ENDE TEMPORÄRER FIX ---
-
+    // Verwendet den v6-Schlüssel, der zum v6-Client (FoodRepoClient.swift) passt
+    private let foodRepoClient = FoodRepoClient(apiKey: "3ce90a15c668deefc35392d660875a53")
 
     enum DateFilter: String, CaseIterable, Identifiable {
         case day = "Tag"
@@ -102,10 +86,6 @@ struct ContentView: View {
                         Spacer(minLength: 120)
                     }
                     .tag(0)
-                    .task {
-                        // Demo: Abruf der FoodRepo-API beim Öffnen der Hinzufügen-Seite
-                        fetchFoodRepoSample()
-                    }
 
                     // Page 1: Home
                     VStack(spacing: 0) {
@@ -149,8 +129,7 @@ struct ContentView: View {
                     .tag(1)
 
                     // Page 2: Analytics
-                    // AnalyticsView(meals: filteredMeals) // <-- Auskommentiert, falls AnalyticsView auch fehlt
-                    Text("Analytics View Platzhalter") // <-- Platzhalter
+                    AnalyticsView(meals: filteredMeals)
                         .tag(2)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
@@ -162,29 +141,24 @@ struct ContentView: View {
             }
             .ignoresSafeArea(edges: .bottom)
             .navigationTitle(titleForPage(selectedPage))
+            
+            // HIER IST DIE ÄNDERUNG:
             .sheet(isPresented: $showingFoodSearch) {
-                // FoodSearchView(client: foodRepoClient) { pickedName, pickedCalories in // <-- Auskommentiert, falls FoodSearchView fehlt
-                Text("Food Search Platzhalter") // <-- Platzhalter
-                Button("Test-Eintrag hinzufügen") { // <-- Platzhalter-Aktion
-                    addMeal(name: pickedName, calories: Int16(pickedCalories))
-                    showingFoodSearch = false
-                }
-                let pickedName = "Test-Food" // <-- Platzhalter-Daten
-                let pickedCalories = 123 // <-- Platzhalter-Daten
+                // Übergibt die "addMeal"-Funktion an die FoodSearchView.
+                // Die FoodDetailView wird sie aufrufen und das Sheet schließen.
+                FoodSearchView(client: foodRepoClient, onAddMeal: { name, kcal in
+                    addMeal(name: name, calories: kcal)
+                    showingFoodSearch = false // Schließt das gesamte Sheet
+                })
             }
             .sheet(isPresented: $showingScanner) {
-                // BarcodeScannerView { code in // <-- Auskommentiert, falls BarcodeScannerView fehlt
-                Text("Scanner Platzhalter") // <-- Platzhalter
-                Button("Test-Scan durchführen") { // <-- Platzhalter-Aktion
-                    let code = "12345678" // <-- Platzhalter-Daten
+                BarcodeScannerView { code in
                     Task {
                         let ean = code.trimmingCharacters(in: .whitespacesAndNewlines)
                         
-                        // HINWEIS: Wenn Ihr FoodRepoClient fehlt, wird dieser Teil fehlschlagen.
-                        // Der Dummy-Client oben wird einen fatalError auslösen.
                         if let product = try? await foodRepoClient.getProductByBarcode(ean: ean) {
                             await MainActor.run {
-                                let title = product.brand != nil ? "\(product.name) (\(product.brand!))" : product.name
+                                let title = product.brand != nil && !product.brand!.isEmpty ? "\(product.name) (\(product.brand!))" : product.name
                                 let kcal = Int16(Int(product.energyKcalPer100g ?? 0))
                                 addMeal(name: title, calories: kcal)
                                 showingScanner = false
@@ -218,8 +192,6 @@ struct ContentView: View {
     // Core Data löschen
     private func deleteMeals(offsets: IndexSet) {
         withAnimation {
-            // ACHTUNG: Hier muss auf `filteredMeals` statt `meals` zugegriffen werden,
-            // da die Indizes vom `ForEach(filteredMeals)` kommen.
             offsets.map { filteredMeals[$0] }.forEach(viewContext.delete)
 
             do {
@@ -233,23 +205,12 @@ struct ContentView: View {
     
     // Hintergrund-Speichern: Rezepte mit Zutaten
     private func saveRecipeInBackground(name: String, ingredients: [(name: String, amount: Double, unit: String)]) {
-        // Erwartet, dass es Core-Data-Entities "Recipe" und "Ingredient" mit Beziehung gibt
         guard let persistentStoreCoordinator = viewContext.persistentStoreCoordinator else { return }
         let backgroundContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
         backgroundContext.persistentStoreCoordinator = persistentStoreCoordinator
 
         backgroundContext.perform {
-            // Ersetze die folgenden Zeilen, sobald deine NSManagedObject-Subklassen vorhanden sind
-            // let recipe = Recipe(context: backgroundContext)
-            // recipe.name = name
-            // recipe.createdAt = Date()
-            // for ing in ingredients {
-            //     let ingredient = Ingredient(context: backgroundContext)
-            //     ingredient.name = ing.name
-            //     ingredient.amount = ing.amount
-            //     ingredient.unit = ing.unit
-            //     ingredient.recipe = recipe
-            // }
+            // ... (Ihre Logik zum Erstellen von Rezepten)
             do {
                 try backgroundContext.save()
             } catch {
@@ -257,38 +218,8 @@ struct ContentView: View {
             }
         }
     }
-    
-    // Beispiel-API-Aufruf (FoodRepo): holt alle Felder und dekodiert sie in ProductResponse
-    private func fetchFoodRepoSample() {
-        Task {
-            guard let url = URL(string: "https://www.foodrepo.org/api/v3/products/1") else {
-                print("Ungültige URL")
-                return
-            }
-            let api = ProductAPI() // <-- Dieser Teil fehlte
-            do {
-                let response = try await api.fetchProduct(from: url, headers: [
-                    "Authorization": "Token token=3ce90a15c668deefc35392d660875a53",
-                    "Accept": "application/json"
-                ])
-                let product = response.data
-                // Beispiel-Logs (du hast Zugriff auf ALLE Felder des Models)
-                print("FoodRepo Produkt ID:", product.id)
-                
-                // HIER IST DER FIX für die Warnung:
-                print("Barcode:", product.barcode ?? "N/A") // <-- Verwendet ??
-                
-                print("Name (de):", product.displayNameTranslations["de"] ?? product.nameTranslations["de"] ?? "-")
-                print("kCal/100:", product.nutrients.energyCaloriesKcal.perHundred ?? -1)
-                print("Zutaten (de):", product.ingredientsTranslations["de"] ?? "-")
-                print("Bilder count:", product.images.count)
-                print("API Version:", response.meta.apiVersion)
-            } catch {
-                print("FoodRepo fetch error:", error)
-            }
-        }
-    }
 }
+
 
 // DateFormatter für Anzeige
 private let itemFormatter: DateFormatter = {
@@ -297,6 +228,8 @@ private let itemFormatter: DateFormatter = {
     formatter.timeStyle = .short
     return formatter
 }()
+
+// MARK: - Subviews (ActionBar, ActionTile, BottomBar)
 
 private struct ActionBar: View {
     @Binding var showingFoodSearch: Bool
@@ -398,7 +331,8 @@ private struct BottomBar: View {
     }
 }
 
-// Preview
+// MARK: - Preview
+
 #Preview("Mit Beispieldaten und Filter") {
     // In-Memory Persistence für die Preview
     let container = NSPersistentContainer(name: "Balance")
@@ -410,7 +344,7 @@ private struct BottomBar: View {
     })
     let context = container.viewContext
     
-    // Beispiel-Daten: Heute, diese Woche, dieser Monat, dieses Jahr
+    // Beispiel-Daten
     let cal = Calendar.current
     let now = Date()
     
@@ -421,24 +355,15 @@ private struct BottomBar: View {
         m.date = date
     }
     
-    // Heute
     makeMeal(name: "Frühstück", calories: 450, date: now)
     makeMeal(name: "Mittagessen", calories: 720, date: now)
     
-    // Diese Woche (gestern, vorgestern)
     if let yesterday = cal.date(byAdding: .day, value: -1, to: now) {
         makeMeal(name: "Snack", calories: 200, date: yesterday)
     }
-    if let twoDaysAgo = cal.date(byAdding: .day, value: -2, to: now) {
-        makeMeal(name: "Abendessen", calories: 650, date: twoDaysAgo)
-    }
-    
-    // Dieser Monat (vor 10 Tagen)
     if let tenDaysAgo = cal.date(byAdding: .day, value: -10, to: now) {
         makeMeal(name: "Pasta", calories: 800, date: tenDaysAgo)
     }
-    
-    // Dieses Jahr (vor 2 Monaten)
     if let twoMonthsAgo = cal.date(byAdding: .month, value: -2, to: now) {
         makeMeal(name: "Salat", calories: 350, date: twoMonthsAgo)
     }
@@ -452,84 +377,3 @@ private struct BottomBar: View {
     return ContentView()
         .environment(\.managedObjectContext, context)
 }
-
-// =======================================================
-// MARK: - API-MODELLE (Diese haben gefehlt)
-// =======================================================
-
-import Foundation
-
-// MARK: - API Client
-
-struct ProductAPI {
-    
-    /// Ruft eine generische URL ab und dekodiert die erwartete Antwort.
-    func fetchProduct(from url: URL, headers: [String: String]) async throws -> ProductResponse {
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        
-        // Füge alle Header zur Anfrage hinzu
-        for (key, value) in headers {
-            request.setValue(value, forHTTPHeaderField: key)
-        }
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            print("Ungültige Antwort oder Statuscode vom Server")
-            throw URLError(.badServerResponse)
-        }
-        
-        let decoder = JSONDecoder()
-        // Die API verwendet snake_case (z.B. api_version, display_name_translations)
-        // .convertFromSnakeCase wandelt dies in Swift-camelCase (z.B. apiVersion) um
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        
-        return try decoder.decode(ProductResponse.self, from: data)
-    }
-}
-
-// MARK: - Datenmodelle für FoodRepo API
-
-// Das Haupt-Antwortobjekt der API
-struct ProductResponse: Decodable {
-    let data: Product
-    let meta: Meta
-}
-
-// Die Meta-Informationen der API-Antwort
-struct Meta: Decodable {
-    let apiVersion: String
-}
-
-// Das Produkt-Modell.
-// Enthält alle Felder, die sowohl von `fetchFoodRepoSample` als auch vom Barcode-Scanner verwendet werden.
-struct Product: Decodable, Identifiable {
-    let id: Int
-    let barcode: String? // <-- Ist optional (String?)
-    let name: String // Wird vom Barcode-Scanner verwendet
-    let brand: String? // Wird vom Barcode-Scanner verwendet
-    
-    // Für `fetchFoodRepoSample`
-    let displayNameTranslations: [String: String]
-    let nameTranslations: [String: String]
-    let ingredientsTranslations: [String: String]
-    let nutrients: Nutrients
-    let images: [ProductImage]
-    
-    // Vom Barcode-Scanner verwendetes, vereinfachtes Feld.
-    let energyKcalPer100g: Double?
-}
-
-// Die Nährwert-Struktur (verschachtelt im Produkt)
-struct Nutrients: Decodable {
-    let energyCaloriesKcal: NutrientValue
-}
-
-// Der Nährwert (verschachtelt in Nutrients)
-struct NutrientValue: Decodable {
-    let perHundred: Double?
-}
-
-// Die Bild-Struktur (verschachtelt im Produkt)
-struct ProductImage: Decodable, Hashable {}

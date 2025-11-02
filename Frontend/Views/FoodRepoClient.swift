@@ -1,20 +1,27 @@
 import Foundation
 
+// DEFINITION 1: FoodProduct
 struct FoodProduct: Identifiable, Decodable {
     let id: String
     let name: String
     let brand: String?
+    
     let energyKcalPer100g: Double?
+    let fatPer100g: Double?
+    let carbohydratesPer100g: Double?
+    let proteinPer100g: Double?
 
     enum CodingKeys: String, CodingKey {
-        case id
-        case name
-        case brand
-        case nutrients
+        case id, name, brand, nutrients
     }
 
     enum NutrientsKeys: String, CodingKey {
-        case energyKcalPer100g = "energy_kcal_per_100g"
+        case energyKcal = "energy_calories_kcal"
+        case fat, carbohydrates, protein
+    }
+    
+    enum ValueKeys: String, CodingKey {
+        case perHundred = "per_hundred"
     }
 
     init(from decoder: Decoder) throws {
@@ -22,38 +29,55 @@ struct FoodProduct: Identifiable, Decodable {
         self.id = try container.decode(String.self, forKey: .id)
         self.name = (try? container.decode(String.self, forKey: .name)) ?? "Unbekannt"
         self.brand = try? container.decodeIfPresent(String.self, forKey: .brand)
-        if let nutrients = try? container.nestedContainer(keyedBy: NutrientsKeys.self, forKey: .nutrients) {
-            self.energyKcalPer100g = try? nutrients.decodeIfPresent(Double.self, forKey: .energyKcalPer100g)
+        
+        if let nutrientsContainer = try? container.nestedContainer(keyedBy: NutrientsKeys.self, forKey: .nutrients) {
+            
+            if let kcalContainer = try? nutrientsContainer.nestedContainer(keyedBy: ValueKeys.self, forKey: .energyKcal) {
+                self.energyKcalPer100g = try? kcalContainer.decodeIfPresent(Double.self, forKey: .perHundred)
+            } else { self.energyKcalPer100g = nil }
+            
+            if let fatContainer = try? nutrientsContainer.nestedContainer(keyedBy: ValueKeys.self, forKey: .fat) {
+                self.fatPer100g = try? fatContainer.decodeIfPresent(Double.self, forKey: .perHundred)
+            } else { self.fatPer100g = nil }
+
+            if let carbContainer = try? nutrientsContainer.nestedContainer(keyedBy: ValueKeys.self, forKey: .carbohydrates) {
+                self.carbohydratesPer100g = try? carbContainer.decodeIfPresent(Double.self, forKey: .perHundred)
+            } else { self.carbohydratesPer100g = nil }
+            
+            if let proteinContainer = try? nutrientsContainer.nestedContainer(keyedBy: ValueKeys.self, forKey: .protein) {
+                self.proteinPer100g = try? proteinContainer.decodeIfPresent(Double.self, forKey: .perHundred)
+            } else { self.proteinPer100g = nil }
+            
         } else {
             self.energyKcalPer100g = nil
+            self.fatPer100g = nil
+            self.carbohydratesPer100g = nil
+            self.proteinPer100g = nil
         }
     }
 }
 
+// DEFINITION 2: FoodRepoSearchResponse
 struct FoodRepoSearchResponse: Decodable {
     let products: [FoodProduct]
 }
 
+// DEFINITION 3: FoodRepoClient
 final class FoodRepoClient {
     private let session: URLSession
     private let apiKey: String
 
-    // Replace "YOUR_API_KEY" with your actual FoodRepo API key.
-    init(apiKey: String = "YOUR_API_KEY", session: URLSession = .shared) {
+    init(apiKey: String, session: URLSession = .shared) {
         self.apiKey = apiKey
         self.session = session
     }
 
-    /// Searches products by text query.
-    /// - Parameters:
-    ///   - query: Search term.
-    ///   - limit: Maximum number of results.
-    /// - Returns: Array of FoodProduct.
-    func searchProducts(query: String, limit: Int = 20) async throws -> [FoodProduct] {
+    func searchProducts(query: String) async throws -> [FoodProduct] {
         guard var components = URLComponents(string: "https://www.foodrepo.org/api/v6/products") else { return [] }
         components.queryItems = [
             URLQueryItem(name: "q", value: query),
-            URLQueryItem(name: "per_page", value: String(limit))
+            URLQueryItem(name: "per_page", value: "10"),
+            URLQueryItem(name: "lang", value: "de")
         ]
         guard let url = components.url else { return [] }
         var request = URLRequest(url: url)
@@ -66,6 +90,7 @@ final class FoodRepoClient {
         }
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
         if let wrapper = try? decoder.decode(FoodRepoSearchResponse.self, from: data) {
             return wrapper.products
         } else if let products = try? decoder.decode([FoodProduct].self, from: data) {
@@ -75,9 +100,6 @@ final class FoodRepoClient {
         }
     }
 
-    /// Retrieves a product by barcode.
-    /// - Parameter ean: Barcode string.
-    /// - Returns: Optional FoodProduct.
     func getProductByBarcode(ean: String) async throws -> FoodProduct? {
         guard let url = URL(string: "https://www.foodrepo.org/api/v6/products/barcode/\(ean)") else { return nil }
         var request = URLRequest(url: url)

@@ -1,34 +1,28 @@
 import SwiftUI
+import Combine
 
 struct FoodSearchView: View {
     @State private var query: String = ""
     @State private var isLoading: Bool = false
     @State private var results: [FoodProduct] = []
     @State private var errorMessage: String?
+    
+    @StateObject private var debouncer = Debouncer(delay: 0.5)
 
     let client: FoodRepoClient
-    let onPick: (String, Int16) -> Void
+    let onAddMeal: (String, Int16) -> Void
 
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationView {
             VStack {
-                HStack {
-                    TextField("Lebensmittel suchen", text: $query)
-                        .textFieldStyle(.roundedBorder)
-                        .submitLabel(.search)
-                        .onSubmit { Task { await performSearch() } }
-                    Button {
-                        Task { await performSearch() }
-                    } label: {
-                        Image(systemName: "magnifyingglass")
-                    }
-                    .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-                .padding()
-
-                if isLoading {
+                TextField("Lebensmittel (auf Deutsch) suchen", text: $query)
+                    .textFieldStyle(.roundedBorder)
+                    .padding(.horizontal)
+                    .submitLabel(.search)
+                
+                if isLoading && results.isEmpty {
                     ProgressView("Suche...")
                         .padding()
                 }
@@ -40,11 +34,8 @@ struct FoodSearchView: View {
                 }
 
                 List(results) { product in
-                    Button {
-                        let name = product.brand != nil && !product.brand!.isEmpty ? "\(product.name) (\(product.brand!))" : product.name
-                        let kcal = Int16(product.energyKcalPer100g ?? 0)
-                        onPick(name, kcal)
-                        dismiss()
+                    NavigationLink {
+                        FoodDetailView(product: product, onAddMeal: onAddMeal)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(product.name)
@@ -69,14 +60,25 @@ struct FoodSearchView: View {
                     Button("Schließen") { dismiss() }
                 }
             }
+            .onChange(of: query) { newQuery in
+                isLoading = true
+                debouncer.run {
+                    Task { await performSearch(query: newQuery) }
+                }
+            }
         }
     }
 
-    private func performSearch() async {
+    private func performSearch(query: String) async {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !q.isEmpty else { return }
-        isLoading = true
-        errorMessage = nil
+        guard !q.isEmpty else {
+            await MainActor.run {
+                self.results = []
+                self.isLoading = false
+            }
+            return
+        }
+        
         do {
             let items = try await client.searchProducts(query: q)
             await MainActor.run {
@@ -92,9 +94,26 @@ struct FoodSearchView: View {
     }
 }
 
+final class Debouncer: ObservableObject {
+    private var cancellable: AnyCancellable?
+    private let delay: TimeInterval
+    
+    init(delay: TimeInterval = 0.5) {
+        self.delay = delay
+    }
+    
+    func run(action: @escaping () -> Void) {
+        cancellable?.cancel()
+        cancellable = Just(())
+            .delay(for: .seconds(delay), scheduler: DispatchQueue.main)
+            .sink(receiveValue: { _ in action() })
+    }
+}
+
 #Preview {
-    let client = FoodRepoClient(apiKey: "DEMO_KEY")
-    return FoodSearchView(client: client) { name, calories in
-        print(name, calories)
+    let client = FoodRepoClient(apiKey: "3ce90a15c668deefc35392d660875a53")
+    // KORREKTUR: 'return' entfernt
+    FoodSearchView(client: client) { name, calories in
+        print("Mahlzeit hinzugefügt: \(name), \(calories) kcal")
     }
 }
